@@ -17,6 +17,9 @@ ScumDoc Parser
      :target: https://pyup.io/repos/github/reclamador/scumdoc_parser/
      :alt: Updates
 
+.. image:: https://coveralls.io/repos/github/reclamador/scumdoc_parser/badge.svg?branch=master
+     :target: https://coveralls.io/github/reclamador/scumdoc_parser?branch=master
+
 
 Parser for docs previously text extracted by an OCR. Just for (legal) documents no NLP is required
 
