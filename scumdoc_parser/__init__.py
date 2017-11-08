@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 import re
-from datetime import datetime
-from difflib import get_close_matches, SequenceMatcher
-
-"""Top-level package for ScumDoc Parser."""
+from difflib import SequenceMatcher
 
 __author__ = """Juan Madurga"""
 __email__ = 'jlmadurga@gmail.com'
 __version__ = '0.1.0'
-
 
 
 class BaseSearch(object):
@@ -85,6 +81,7 @@ class RegexSearch(BaseSearch):
 
     def _search(self, line):
         return re.search(self.regex, line)
+
 
 class FuzzySearch(BaseSearch):
 
