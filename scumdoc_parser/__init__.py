@@ -13,23 +13,74 @@ __version__ = '0.1.0'
 
 class BaseSearch(object):
 
-    def __init__(self, name, pre_process=None, post_process=None, group=None):
+    def __init__(self, name, pre_process=None, post_process=None, group=None, multiple=False):
+        """
+        Abstract Search
+        :param name: name of the search, used to organize returned result
+        :param pre_process: function for processing the text before performing search
+        :param post_process: function for processing the text after performing the search
+        :param group: name of the group of searches. Usefull to organize results
+        :param multiple: search might apply several times
+        """
         self.name = name
-        self.pre_process = pre_process
-        self.post_process = post_process
+        self.pre_process = pre_process if pre_process else self.dummy_process
+        self.post_process = post_process if post_process else self.dummy_process
         self.group = group
+        self.multiple = multiple
+
+    @classmethod
+    def dummy_process(cls, content):
+        return content
+
+    @classmethod
+    def process_only_true(cls, content):
+        if content:
+            return content
+        return None
 
     def _search(self, line):
+        """
+        Implement this method for performing the real search
+        :param line:
+        :return:
+        """
         raise NotImplementedError
 
-    def search(self, line):
-        return self.post_process(self._search(self.pre_process(line)))
+    def _create_key_result(self, key, result, group=False):
+        if key not in result:
+            result[key] = [] if not group and self.multiple else {}
+
+    def search(self, line, result):
+        content = self.post_process(self._search(self.pre_process(line)))
+        if content is not None:
+            if self.group:
+                self._create_key_result(self.group, result, True)
+                self._create_key_result(self.name, result[self.group])
+                if self.multiple:
+                    result[self.group][self.name].append(content)
+                else:
+                    result[self.group][self.name] = content
+            else:
+                self._create_key_result(self.name, result)
+                if self.multiple:
+                    result[self.name].append(content)
+                else:
+                    result[self.name] = content
 
 
 class RegexSearch(BaseSearch):
 
-    def __init__(self, name, regex, pre_process=None, post_process=None, group=None):
-        super(RegexSearch, self).__init__(name, regex, pre_process, post_process, group)
+    def __init__(self, name, regex, pre_process=None, post_process=None, group=None, multiple=None):
+        """
+        Search using a regular expression
+        :param name:
+        :param regex:
+        :param pre_process:
+        :param post_process:
+        :param group:
+        :param multiple:
+        """
+        super(RegexSearch, self).__init__(name, pre_process, post_process, group, multiple)
         self.regex = regex
 
     def _search(self, line):
@@ -37,84 +88,61 @@ class RegexSearch(BaseSearch):
 
 class FuzzySearch(BaseSearch):
 
-    def __init__(self, name, keyword, ratio, pre_process=None, group=None):
-        super(FuzzySearch, self).__init__(name, pre_process, self._post_process, group)
+    def __init__(self, name, keyword, ratio, pre_process=None, post_process=None, group=None):
+        """
+        Search ussing fuzzy search using a ratio to set as valid
+        :param name:
+        :param keyword:
+        :param ratio:
+        :param pre_process:
+        :param post_process:
+        :param group:
+        """
+        super(FuzzySearch, self).__init__(name, pre_process, post_process, group)
         self.ratio = ratio
         self.keyword = keyword
-
-    def _post_process(self, search):
-        return search
 
     def _search(self, line):
         return SequenceMatcher(a=self.keyword, b=line).ratio() >= self.ratio
 
 
 class BaseScumDocParser(object):
-    """
-    Base class to handle extraction of not human documents. Ids, passports, recipies, boardingpass
-    """
-    KEYWORDS = {}
-    OCR = []
 
-    def __init__(self, raw_text):
+    def __init__(self, raw_text, searches):
+        """
+        Base class to handle extraction of not human documents. Ids, passports, recipies, boardingpass
+        :param raw_text:
+        :param searches:
+        """
         self.text = self._normalize(raw_text)
-        self._keywords = dict(self.KEYWORDS)
-        self._ocrs = self.OCR
+        self.searches = searches
 
     def _normalize(self, raw_text):
         return [line.strip().lower() for line in raw_text.splitlines() if line.strip()]
 
-    def _fuzzy_search(self, keyword, accuracy=0.7):
-        found = get_close_matches(keyword, self.text, 1, accuracy)
-        if found:
-            return found[0]
-        return None
-
-
-    def _search_dates(self, line, dates_results):
-        found = re.search('(\d{2})\s(\d{2})\s(\d{4})', line)
-        if found:
-            dates_results.append(datetime.strptime('%s-%s-%s' % found.groups(), '%d-%m-%Y').date())
-
-    def _search_keywords(self, keywords=None, result=None):
-        if not keywords:
-            keywords = self._keywords
-        if not result:
-            result = self._keywords
-        for keyword in keywords:
-            found = self._fuzzy_search(keyword)
-            if found:
-                result[keyword] = True
-        return result
-
-    def _extract_ocr(self, line, ocr_results):
-        line_normalized = line.replace(' ','')
-        for ocr in self._ocrs:
-            match = re.match(ocr, line_normalized)
-            if match:
-                ocr_results.update(match.groupdict())
-
-    def _extract_keywords(self, line, results):
-        for keyword in self._keywords:
-            if SequenceMatcher(a=keyword, b=line).ratio() >= 0.7:
-                results[keyword] = True
-
     def parse(self):
         """
-        Parse doc text
-        :return:
+        Parse the text performing all searches and returning the results
+        :return: dictionary of results
         """
-        keyword_results = dict((keyword, False) for keyword in self._keywords)
-        dates_results = []
-        ocr_results = {}
+        result = {}
         for line in self.text:
-            self._search_dates(line, dates_results)
-            self._extract_ocr(line, ocr_results)
-            self._extract_keywords(line, keyword_results)
-        return {'keywords': keyword_results, 'dates': dates_results, 'ocr': ocr_results}
+            for search in self.searches:
+                search.search(line, result)
+        return result
 
     def search(self, keywords):
-        result = dict((keyword, False) for keyword in keywords)
-        self._keywords = self._search_keywords(keywords, result)
-        return {'keywords': result}
-
+        """
+        Search some keywords
+        :param keywords:
+        :return:
+        """
+        result = {'keywords': {keyword: False for keyword in keywords}}
+        searches = []
+        for keyword in keywords:
+            searches.append(FuzzySearch(keyword, keyword, 0.7, group='keywords',
+                                        post_process=FuzzySearch.process_only_true))
+        for line in self.text:
+            for search in searches:
+                search.search(line, result)
+        return result

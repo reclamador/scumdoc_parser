@@ -3,11 +3,12 @@
 
 """Tests for `scumdoc_parser` package."""
 
-
+from datetime import datetime, date
 import unittest
 from datetime import date
 
 from scumdoc_parser.dni import DNIScumParser
+from scumdoc_parser import FuzzySearch, RegexSearch, BaseScumDocParser
 
 DNI_OLD = u'DOCUMENTO NACIONALDE IDENTIDAD.\nESPANA\nPARIER APELD0\nSANCHOZ DE LA BL ANC A\nSEGUNDO APELD\nA PUENT ES\nTo NOORE\nMARIA DEL Sagrario\nSaxo NACIONALIDAD\nFESP\nFECHA DE NAMENTO\nO910 1978\nDESP\nA JX199161\nVADO HASTA\non the\n19 09 2021\nSPM\nDNI NUM .\n56933095F\nLEID\nLUGAR DE NACMIENTO\nMAD RI D\nPROVINCIA/PAIS\nMADRID\nHJOIA DE\nJUAN 1 ANTONIA\nDOMICILIO\nC. R10 T A J 0 1 0 P01 B\nLUGAR DE DOMICILIO\nAL COR CON\nSELLER\nPROVINCIAIPAIS\nEQUIPO\nMADRID , SONNNNNNSSSSSSSS 28031L6D 1\nIDES PA JX1991 61956933095 F<<<<<<\n7810098F2109195ESP<<<<<<<<<<<5\nSANCHOZ<DE<LA<BLANCAKPUENTE<<M\n'
 
@@ -22,6 +23,8 @@ DNI_NEW_NO_BACK = u'ESPANA O DocuMENTO NACIONAL DE IDENTIDAD\nthe\nAn OAS\nAPELD
 
 
 DNI_OLD_FIRST_BACK = u'SEOUVEVAUEVASONVAEBECEIPEIVIBABE\nESPANA\nLUGAR DE NACIMIENTO LLC DE NAIXEMENT\nBARCELONA\nPROVINCIAPAIs PROviNCIA-PAis\nBARCELONA\nHIOIA DEI FILLIA DE\nS AND ALI 0 1 ANTONIA\nDOMICILIO IDOMICII\nC. PADILL A 289 P05 1\nLUCAR DE DOMICILIO LLoC DE DOMICIL\nBARCELONA\nPRISER APELLDO PRIMER coGHOR\nMARTINEZ\nSEGUN90 APELL00 sEGON coGMOs\nGAGO\nNOABRE NON\nPEPA ESTHER\nSEXO / SEXENACIONALIDAD INACIONALITAT\nESP\nFECHA DE NACIMENTO DATA DE MAIXEMENT\n19 06 1969\nPROVINCIAPA is I PROVINCIA-PAis\nEQUIPOIEQUIP\nnews.\n0805516D1\nent\nAP 112552\nVALDO HASTA/VALID FINS\n10 06 2021\nID ESPA J P1125 5265368604 1 W<<<<<<\n6906197 F21 06102ESP<<<<<<<<<<<4\nMARTINEZ <GAG0<<PEPA <ESTHER <<\nrun on DC\n53686041 W\nDNI N\xfaM.\n'
+
+
 
 class TestDNIScumdocParser(unittest.TestCase):
     """Tests for `scumdoc_parser` package."""
@@ -50,8 +53,9 @@ class TestDNIScumdocParser(unittest.TestCase):
         for key, value in result['keywords'].items():
             self.assertEqual(keywords[key], value, '%s not %s' % (key, value))
         if 'ocr' in result:
-            for key, value in result['ocr'].items():
-                self.assertEqual(ocrs[key], value, '%s not %s' % (key, value))
+            for key_mr, value_mr in result['ocr'].items():
+                for key, value in result['ocr'][key_mr].items():
+                    self.assertEqual(ocrs[key], value, '%s not %s' % (key, value))
 
     def test_dni_old(self):
         keywords = dict(self.keywords)
@@ -68,7 +72,6 @@ class TestDNIScumdocParser(unittest.TestCase):
                 'surnames': 'sanchoz<de<la<blancakpuente<', 'names': 'm'}
         parser = DNIScumParser(DNI_OLD)
         result = parser.parse()
-        print result
         self.assertResult(result, [date(year=2021, month=9, day=19)], keywords, ocrs)
 
     def test_dni_old_no_back(self):
@@ -86,7 +89,6 @@ class TestDNIScumdocParser(unittest.TestCase):
         ocrs = {}
         parser = DNIScumParser(DNI_OLD_NO_BACK)
         result = parser.parse()
-        print result
         self.assertResult(result, [date(year=2021, month=9, day=19)], keywords, ocrs)
 
 
@@ -111,7 +113,6 @@ class TestDNIScumdocParser(unittest.TestCase):
         ocrs = {'date_expires': u'240123', 'date_birth': u'730116', 'nat': u'esp', 'country': u'esp', 'dni': u'52522003r', 'sex': u'm'}
         parser = DNIScumParser(DNI_OLD_CAT)
         result = parser.parse()
-        print result
         self.assertResult(result, [date(year=2025, month=1, day=23)], keywords, ocrs)
 
     def test_dni_old_no_back_cat(self):
@@ -135,7 +136,6 @@ class TestDNIScumdocParser(unittest.TestCase):
         ocrs = {}
         parser = DNIScumParser(DNI_OLD_NO_BACK_CAT)
         result = parser.parse()
-        print result
         self.assertResult(result, [date(year=2025, month=1, day=23)], keywords, ocrs)
 
     def test_dni_new(self):
@@ -156,7 +156,6 @@ class TestDNIScumdocParser(unittest.TestCase):
                      'names': u'ramon', 'nat': u'esp', 'country': u'esp', 'dni': u'04900073d', 'sex': u'm'}
         parser = DNIScumParser(DNI_NEW)
         result = parser.parse()
-        print result
         self.assertResult(result, [date(year=1983, month=11, day=17), date(year=2026, month=4, day=12)], keywords, ocrs)
 
     def test_dni_new_no_back(self):
@@ -176,7 +175,6 @@ class TestDNIScumdocParser(unittest.TestCase):
         ocrs = {}
         parser = DNIScumParser(DNI_NEW_NO_BACK)
         result = parser.parse()
-        print result
         self.assertResult(result, [date(year=1983, month=11, day=17), date(year=2026, month=4, day=12)], keywords, ocrs)
 
     def test_dni_old_first_back_in_same_level(self):
@@ -193,11 +191,46 @@ class TestDNIScumdocParser(unittest.TestCase):
     def test_dni_search_found(self):
         parser = DNIScumParser(DNI_OLD)
         result = parser.search(['maria del sagrario'])
-        print result
         self.assertResult(result, [], {'maria del sagrario': True}, {})
 
     def test_dni_search_not_found(self):
         parser = DNIScumParser(DNI_OLD)
         result = parser.search(['ojete'])
-        print result
         self.assertResult(result, [], {'ojete': False}, {})
+
+    def test_fuzzy_search(self):
+        result = {}
+        fuzzy_search = FuzzySearch('name', '1234567890', 0.7)
+        fuzzy_search.search('12345678aa', result)
+        self.assertTrue(result['name'])
+        result = {}
+        fuzzy_search.search('123456aaaa', result)
+        self.assertFalse(result['name'])
+
+    def test_regex_search(self):
+        result = {}
+        regex_search = RegexSearch('dates', '(\d{2})\s(\d{2})\s(\d{4})')
+        regex_search.search('abcd', result)
+        self.assertFalse('dates' in result)
+        result = {}
+        regex_search.search('10 11 1984', result)
+        self.assertIsNotNone(result['dates'])
+
+    def test_regex_search_pre_process(self):
+        result = {}
+        def pre_process(content):
+            return content.replace(',', ' ')
+        regex_search = RegexSearch('name', '(\d{2})\s(\d{2})\s(\d{4})', pre_process=pre_process)
+        regex_search.search('10,11,1984', result)
+        self.assertIsNotNone(result['name'])
+
+    def test_regex_search_post_process(self):
+        result = {}
+        def post_process(content):
+            return datetime.strptime('%s-%s-%s' % content.groups(), '%d-%m-%Y').date()
+        regex_search = RegexSearch('name', '(\d{2})\s(\d{2})\s(\d{4})', post_process=post_process)
+        regex_search.search('10 11 1984', result)
+        self.assertEqual(datetime(year=1984, month=11, day=10).date(), result['name'])
+
+
+
