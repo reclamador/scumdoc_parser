@@ -7,14 +7,14 @@ ScumDoc Parser
         :target: https://pypi.python.org/pypi/scumdoc_parser
 
 .. image:: https://img.shields.io/travis/jlmadurga/scumdoc_parser.svg
-        :target: https://travis-ci.org/jlmadurga/scumdoc_parser
+        :target: https://travis-ci.org/reclamador/scumdoc_parser
 
 .. image:: https://readthedocs.org/projects/scumdoc-parser/badge/?version=latest
         :target: https://scumdoc-parser.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
 .. image:: https://pyup.io/repos/github/jlmadurga/scumdoc_parser/shield.svg
-     :target: https://pyup.io/repos/github/jlmadurga/scumdoc_parser/
+     :target: https://pyup.io/repos/github/reclamador/scumdoc_parser/
      :alt: Updates
 
 
