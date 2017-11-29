@@ -72,7 +72,7 @@ class TestDNIScumdocParser(unittest.TestCase):
                 'surnames': 'sanchoz<de<la<blancakpuente<', 'names': 'm'}
         parser = DNIScumParser(DNI_OLD)
         result = parser.parse()
-        self.assertResult(result, [date(year=2021, month=9, day=19)], keywords, ocrs)
+        self.assertResult(result, [date(year=2021, month=9, day=19).isoformat()], keywords, ocrs)
 
     def test_dni_old_no_back(self):
         keywords = dict(self.keywords)
@@ -89,7 +89,7 @@ class TestDNIScumdocParser(unittest.TestCase):
         ocrs = {}
         parser = DNIScumParser(DNI_OLD_NO_BACK)
         result = parser.parse()
-        self.assertResult(result, [date(year=2021, month=9, day=19)], keywords, ocrs)
+        self.assertResult(result, [date(year=2021, month=9, day=19).isoformat()], keywords, ocrs)
 
 
     def test_dni_old_cat(self):
@@ -113,7 +113,7 @@ class TestDNIScumdocParser(unittest.TestCase):
         ocrs = {'date_expires': u'240123', 'date_birth': u'730116', 'nat': u'esp', 'country': u'esp', 'dni': u'52522003r', 'sex': u'm'}
         parser = DNIScumParser(DNI_OLD_CAT)
         result = parser.parse()
-        self.assertResult(result, [date(year=2025, month=1, day=23)], keywords, ocrs)
+        self.assertResult(result, [date(year=2025, month=1, day=23).isoformat()], keywords, ocrs)
 
     def test_dni_old_no_back_cat(self):
         keywords = self.keywords.copy()
@@ -136,7 +136,7 @@ class TestDNIScumdocParser(unittest.TestCase):
         ocrs = {}
         parser = DNIScumParser(DNI_OLD_NO_BACK_CAT)
         result = parser.parse()
-        self.assertResult(result, [date(year=2025, month=1, day=23)], keywords, ocrs)
+        self.assertResult(result, [date(year=2025, month=1, day=23).isoformat()], keywords, ocrs)
 
     def test_dni_new(self):
         keywords = dict(self.keywords)
@@ -156,7 +156,8 @@ class TestDNIScumdocParser(unittest.TestCase):
                      'names': u'ramon', 'nat': u'esp', 'country': u'esp', 'dni': u'04900073d', 'sex': u'm'}
         parser = DNIScumParser(DNI_NEW)
         result = parser.parse()
-        self.assertResult(result, [date(year=1983, month=11, day=17), date(year=2026, month=4, day=12)], keywords, ocrs)
+        self.assertResult(result, [date(year=1983, month=11, day=17).isoformat(),
+                                   date(year=2026, month=4, day=12).isoformat()], keywords, ocrs)
 
     def test_dni_new_no_back(self):
         keywords = dict(self.keywords)
@@ -175,7 +176,8 @@ class TestDNIScumdocParser(unittest.TestCase):
         ocrs = {}
         parser = DNIScumParser(DNI_NEW_NO_BACK)
         result = parser.parse()
-        self.assertResult(result, [date(year=1983, month=11, day=17), date(year=2026, month=4, day=12)], keywords, ocrs)
+        self.assertResult(result, [date(year=1983, month=11, day=17).isoformat(),
+                                   date(year=2026, month=4, day=12).isoformat()], keywords, ocrs)
 
     def test_dni_old_first_back_in_same_level(self):
         keywords = dict(self.keywords)
@@ -186,7 +188,8 @@ class TestDNIScumdocParser(unittest.TestCase):
         result = parser.parse()
         ocrs = {'date_expires': u'210610', 'surnames': u'martinez<gag0<', 'date_birth': u'690619',
                 'names': u'pepa', 'nat': u'esp', 'country': u'esp', 'dni': u'53686041w', 'sex': u'f'}
-        self.assertResult(result, [date(year=1969, month=6, day=19), date(year=2021, month=6, day=10)], keywords, ocrs)
+        self.assertResult(result, [date(year=1969, month=6, day=19).isoformat(),
+                                   date(year=2021, month=6, day=10).isoformat()], keywords, ocrs)
 
     def test_dni_search_found(self):
         parser = DNIScumParser(DNI_OLD)

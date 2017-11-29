@@ -25,7 +25,7 @@ class DNIScumParser(BaseScumDocParser):
 
     def post_process_date(self, content):
         if content:
-            return datetime.strptime('%s-%s-%s' % content.groups(), '%d-%m-%Y').date()
+            return datetime.strptime('%s-%s-%s' % content.groups(), '%d-%m-%Y').date().isoformat()
         return content
 
     def pre_process_ocr(self, content):
