@@ -391,3 +391,7 @@ class TestDNIScumdocParser(unittest.TestCase):
                             parser.analysis(person={'name': 'maria del sagrario',
                                                     'surnames': 'sanchez de la blanca puente', 'id': '56933095f'},
                                             reference_date=reference_date))
+
+    def test_analysis_not_valid(self):
+        parser = DNIScumParser(DNI_NOT_VALID)
+        self.assertAnalysis([parser.NOT_VALID], parser.analysis())

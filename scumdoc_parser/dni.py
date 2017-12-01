@@ -26,11 +26,6 @@ class DNIScumParser(BaseScumDocParser):
            'mr_2': '(?P<date_birth>[0-9]{6})[0-9](?P<sex>m|f)(?P<date_expires>[0-9]{6})[0-9](?P<nat>[a-z]{3})<+[0-9]',
            'mr_3': '(?P<surnames>([a-z0]+<)+)<(?P<names>[a-z0]+)<*'}
 
-    def post_process_keyword(self, content):
-        if content:
-            return content
-        return None
-
     def post_process_date(self, content):
         if content:
             return datetime.strptime('%s-%s-%s' % content.groups(), '%d-%m-%Y').date()
@@ -116,7 +111,6 @@ class DNIScumParser(BaseScumDocParser):
             for date in self._parsed['dates']:
                 if date > reference_date:
                     return False
-            print self._parsed['dates']
             return True
         return False
 
@@ -180,7 +174,7 @@ class DNIScumParser(BaseScumDocParser):
         """
         results = []
         if self.is_invalid():
-            return results.append(self.NOT_VALID)
+            return [self.NOT_VALID]
         reference_date = datetime.now().date() if not reference_date else reference_date
         if (self.is_front() or self.is_back()) and self.is_expired(reference_date):
             results.append(self.EXPIRED)
