@@ -3,6 +3,14 @@ from scumdoc_parser import BaseScumDocParser, FuzzySearch, RegexSearch
 
 
 class DNIScumParser(BaseScumDocParser):
+
+    VALID = u'Valid DNI'
+    NOT_VALID = u'Not valid DNI'
+    EXPIRED = u'Expired'
+    NOT_VALID_PERSON = u'Person not found'
+    FRONT = u'Front side'
+    BACK = u'Back side'
+
     KEYWORDS = ['nombre', 'sexo nacionalidad', "domicilio", "hijo/a de",
                 'fecha de nacimiento', 'lugar de nacimiento', "idesp",
                 # new keywords
@@ -25,7 +33,7 @@ class DNIScumParser(BaseScumDocParser):
 
     def post_process_date(self, content):
         if content:
-            return datetime.strptime('%s-%s-%s' % content.groups(), '%d-%m-%Y').date().isoformat()
+            return datetime.strptime('%s-%s-%s' % content.groups(), '%d-%m-%Y').date()
         return content
 
     def pre_process_ocr(self, content):
@@ -47,3 +55,142 @@ class DNIScumParser(BaseScumDocParser):
             searches.append(RegexSearch(key, regex=value, group="ocr", pre_process=self.pre_process_ocr,
                                         post_process=self.post_process_ocr))
         super(DNIScumParser, self).__init__(text, searches)
+
+    def _attribute(self, keys):
+        if self._parsed:
+            try:
+                d = self._parsed
+                for key in keys:
+                    d = d[key]
+                return d
+            except KeyError:
+                return None
+        return None
+
+    @property
+    def number(self):
+        return self._attribute(['ocr', 'mr_1', 'dni'])
+
+    @property
+    def expired_date(self):
+        try:
+            return datetime.strptime(self._attribute(['ocr', 'mr_2', 'date_expires']), '%y%m%d').date()
+        except TypeError:
+            return None
+
+    @property
+    def name(self):
+        return self._attribute(['ocr', 'mr_3', 'names'])
+
+    @property
+    def surnames(self):
+        try:
+            return self._attribute((['ocr', 'mr_3', 'surnames'])).replace('<', ' ').replace('0', 'o').strip()
+        except AttributeError:
+            return None
+
+    def is_invalid(self):
+        """
+        Document is considered invalid if no keywords is found
+        :return:
+        """
+        if not self._parsed:
+            return True
+        for key, value in self._parsed['keywords'].items():
+            if value:
+                return False
+        return True
+
+    def is_expired(self, reference_date):
+        """
+        Only can be considered as expired when:
+            - date_expired field in machine readable field is previous to reference date
+            - two dates found and both previous to reference date
+        :param reference_date:
+        :return:
+        """
+        if self.expired_date and self.expired_date < reference_date:
+            return True
+
+        if len(self._parsed['dates']) == 2:
+            for date in self._parsed['dates']:
+                if date > reference_date:
+                    return False
+            print self._parsed['dates']
+            return True
+        return False
+
+    def is_front(self):
+        """
+        Is considered as front if it has the name of the document
+        :return:
+        """
+        try:
+            return self._parsed['keywords']['documento nacional de identidad'] or \
+                   self._parsed['keywords']["espana o documento nacional de identidad"]
+        except KeyError:
+            return False
+
+    def is_back(self):
+        """
+        Is considered as back if it has machine readable data
+        :return:
+        """
+        try:
+            return 'mr_1' in self._parsed['ocr'] or 'mr_2' in self._parsed['ocr'] or 'mr_3' in self._parsed['ocr']
+        except KeyError:
+            return False
+
+    def check_id(self, id):
+        """
+        Check if id is found in the document.
+        It is allowed to differ by one digit, 0.8
+        :param id:
+        :return:
+        """
+        if self.number == id:
+            return True
+        for key, value in self.search([id], 0.8)['keywords'].items():
+            if value:
+                return True
+        return False
+
+    def check_person(self, person):
+        """
+        Check if person is found in the document
+        :param person: {'name', 'surnames', 'id}
+        :return:
+        """
+        if 'id' in person:
+            return self.check_id(person['id'])
+        if self.name == person['name'] and self.surnames == person['surnames']:
+            return True if 'id' not in person else self.check_id(person['id'])
+        for key, value in self.search([person['name'], person['surnames']], 0.9)['keywords'].items():
+            if not value:
+                break
+            return True if 'id' not in person else self.check_id(person['id'])
+        return False
+
+    def analysis(self, person=None, reference_date=None):
+        """
+        Analyze dni
+        :param person: dictionary {'name', 'surnames', 'id'}
+        :param reference_date:
+        :return:
+        """
+        results = []
+        if self.is_invalid():
+            return results.append(self.NOT_VALID)
+        reference_date = datetime.now().date() if not reference_date else reference_date
+        if (self.is_front() or self.is_back()) and self.is_expired(reference_date):
+            results.append(self.EXPIRED)
+        if person and not self.check_person(person):
+            results.append(self.NOT_VALID_PERSON)
+        if not results and self.is_front() and self.is_back():
+            results.append(self.VALID)
+        else:
+            if self.is_front():
+                results.append(self.FRONT)
+            if self.is_back():
+                results.append(self.BACK)
+        return results

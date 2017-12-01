@@ -113,6 +113,7 @@ class BaseScumDocParser(object):
         """
         self.text = self._normalize(raw_text)
         self.searches = searches
+        self._parsed = self.parse()
 
     def _normalize(self, raw_text):
         return [line.strip().lower() for line in raw_text.splitlines() if line.strip()]
@@ -128,16 +129,17 @@ class BaseScumDocParser(object):
                 search.search(line, result)
         return result
 
-    def search(self, keywords):
+    def search(self, keywords, ratio=0.7):
         """
         Search some keywords
         :param keywords:
+        :param ratio:
         :return:
         """
         result = {'keywords': {keyword: False for keyword in keywords}}
         searches = []
         for keyword in keywords:
-            searches.append(FuzzySearch(keyword, keyword, 0.7, group='keywords',
+            searches.append(FuzzySearch(keyword, keyword, ratio, group='keywords',
                                         post_process=FuzzySearch.process_only_true))
         for line in self.text:
             for search in searches:
