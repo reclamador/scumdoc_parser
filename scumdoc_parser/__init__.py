@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
 from difflib import SequenceMatcher
+import logging
 
 __author__ = """Juan Madurga"""
 __email__ = 'jlmadurga@gmail.com'
@@ -47,7 +48,11 @@ class BaseSearch(object):
             result[key] = [] if not group and self.multiple else {}
 
     def search(self, line, result):
-        content = self.post_process(self._search(self.pre_process(line)))
+        try:
+            content = self.post_process(self._search(self.pre_process(line)))
+        except Exception:
+            logging.exception("Exception searching '%s' in line '%s'" % (self.name, line))
+            content = None
         if content is not None:
             if self.group:
                 self._create_key_result(self.group, result, True)

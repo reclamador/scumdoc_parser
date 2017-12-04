@@ -23,6 +23,9 @@ DNI_NEW = u'ESPANA O DocuMENTO NACIONAL DE IDENTIDAD\nthe\nAn OAS\nAPELDOs\nALVA
 
 DNI_NEW_NO_BACK = u'ESPANA O DocuMENTO NACIONAL DE IDENTIDAD\nthe\nAn OAS\nAPELDOs\nALVAREZ\nDORADO\nNOMBAE\nRAMON\nSEXO\nNACONALDAD\nESP\nFECHA DE NACORIENTO\n17 11 1983\n12046\nNUN SOPORT VALDEZ\nBBH110745 12 04 2026\na\n571200\nTV\nDN 04900073D\n'
 
+DNI_NEW_NO_BACK_ERROR_DATES = u'ESPANA O DocuMENTO NACIONAL DE IDENTIDAD\nthe\nAn OAS\nAPELDOs\nALVAREZ\nDORADO\nNOMBAE\nRAMON\nSEXO\nNACONALDAD\nESP\nFECHA DE NACORIENTO\n37 11 1983\n12046\nNUN SOPORT VALDEZ\nBBH110745 12 13 2026\na\n571200\nTV\nDN 04900073D\n'
+
+
 DNI_ONLY_BACK = u'c. COMANDANTE FRANCO 1 P01\nMORA ,\nTOLEDO\nas to the\n8\nH\nH TOLEDO\nH TOLEDO ,\nLa\nOADE\nFRANCISCO 1N FRANCIS MI\nID ES P BBH 11 0745 0490 0073D <<<<<<\n8311178 M2604 125E SP<<<<<<<<<<<7\nALVAREZ<DOR AD0<<RAMON<<<<<<<<\n'
 
 DNI_OLD_FIRST_BACK = u'SEOUVEVAUEVASONVAEBECEIPEIVIBABE\nESPANA\nLUGAR DE NACIMIENTO LLC DE NAIXEMENT\nBARCELONA\nPROVINCIAPAIs PROviNCIA-PAis\nBARCELONA\nHIOIA DEI FILLIA DE\nS AND ALI 0 1 ANTONIA\nDOMICILIO IDOMICII\nC. PADILL A 289 P05 1\nLUCAR DE DOMICILIO LLoC DE DOMICIL\nBARCELONA\nPRISER APELLDO PRIMER coGHOR\nMARTINEZ\nSEGUN90 APELL00 sEGON coGMOs\nGAGO\nNOABRE NON\nPEPA ESTHER\nSEXO / SEXENACIONALIDAD INACIONALITAT\nESP\nFECHA DE NACIMENTO DATA DE MAIXEMENT\n19 06 1969\nPROVINCIAPA is I PROVINCIA-PAis\nEQUIPOIEQUIP\nnews.\n0805516D1\nent\nAP 112552\nVALDO HASTA/VALID FINS\n10 06 2021\nID ESPA J P1125 5265368604 1 W<<<<<<\n6906197 F21 06102ESP<<<<<<<<<<<4\nMARTINEZ <GAG0<<PEPA <ESTHER <<\nrun on DC\n53686041 W\nDNI N\xfaM.\n'
@@ -186,6 +189,25 @@ class TestDNIScumdocParser(unittest.TestCase):
         result = parser.parse()
         self.assertResult(result, [date(year=1983, month=11, day=17),
                                    date(year=2026, month=4, day=12)], keywords, ocrs)
+
+    def test_dni_new_no_back_no_correct_dates(self):
+        keywords = dict(self.keywords)
+        keywords['domicilio'] = False
+        keywords['primer apellido'] = False
+        keywords['segundo apellido'] = False
+        keywords['dni num'] = False
+        keywords['valido hasta'] = False
+        keywords['lugar de domicilio'] = False
+        keywords['hijo/a de'] = False
+        keywords['equipo'] = False
+        keywords['lugar de nacimiento'] = False
+        keywords['lugar de domicilio'] = False
+        keywords['dni'] = False
+        keywords['provincia/pais'] = False
+        ocrs = {}
+        parser = DNIScumParser(DNI_NEW_NO_BACK_ERROR_DATES)
+        result = parser.parse()
+        self.assertResult(result, [], keywords, ocrs)
 
     def test_dni_old_first_back_in_same_level(self):
         keywords = dict(self.keywords)
