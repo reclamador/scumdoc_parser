@@ -39,12 +39,15 @@ class DNIScumParser(BaseScumDocParser):
             return content.groupdict()
         return content
 
-    def __init__(self, text):
+    def __init__(self, text, keywords_ratio=0.7, client_ratio=0.7, id_ratio=0.8):
+        self.keywords_ratio = 0.7
+        self.client_ratio = 0.7
+        self.id_ratio = 0.8
         searches = []
         searches.append(RegexSearch('dates', regex='(\d{2})\s(\d{2})\s(\d{4})', post_process=self.post_process_date,
                         multiple=True))
         for keyword in self.KEYWORDS:
-            searches.append(FuzzySearch(keyword, keyword, 0.7, group='keywords',
+            searches.append(FuzzySearch(keyword, keyword, self.keywords_ratio, group='keywords',
                                         post_process=FuzzySearch.process_only_true))
         for key, value in self.OCR.items():
             searches.append(RegexSearch(key, regex=value, group="ocr", pre_process=self.pre_process_ocr,
@@ -144,7 +147,7 @@ class DNIScumParser(BaseScumDocParser):
         """
         if self.number == id:
             return True
-        for key, value in self.search([id], 0.8)['keywords'].items():
+        for key, value in self.search([id], self.id_ratio)['keywords'].items():
             if value:
                 return True
         return False
@@ -155,15 +158,19 @@ class DNIScumParser(BaseScumDocParser):
         :param person: {'name', 'surnames', 'id}
         :return:
         """
+        found = True
         if 'id' in person:
             return self.check_id(person['id'])
         if self.name == person['name'] and self.surnames == person['surnames']:
             return True if 'id' not in person else self.check_id(person['id'])
-        for key, value in self.search([person['name'], person['surnames']], 0.9)['keywords'].items():
+        for key, value in self.search([person['name'], person['surnames']], self.client_ratio)['keywords'].items():
             if not value:
+                found = False
                 break
-            return True if 'id' not in person else self.check_id(person['id'])
-        return False
+            print key, value
+        if not found:
+            return False
+        return True if 'id' not in person else self.check_id(person['id'])
 
     def analysis(self, person=None, reference_date=None):
         """
