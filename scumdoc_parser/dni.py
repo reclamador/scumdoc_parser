@@ -11,8 +11,8 @@ class DNIScumParser(BaseScumDocParser):
     FRONT = u'Front side'
     BACK = u'Back side'
 
-    KEYWORDS = ['nombre', 'sexo nacionalidad', "domicilio", "hijo/a de",
-                'fecha de nacimiento', 'lugar de nacimiento', "idesp",
+    KEYWORDS = ['nombre', 'sexo nacionalidad', "domicilio", "domicilio / domicili", "hijo/a de",
+                'fecha de nacimiento', 'lugar de nacimiento', "lugar de nacimiento/ lloc de naixement", "idesp",
                 # new keywords
                 "espana o documento nacional de identidad",
                 "apellidos", "num soport validez", 'dni',
@@ -20,7 +20,7 @@ class DNIScumParser(BaseScumDocParser):
                 'documento nacional de identidad',
                 "primer apellido", "segundo apellido", "valido hasta", "dni num",
                 "provincia/pais",  "lugar de domicilio",
-                "equipo"]
+                "equipo", "equipo / equip"]
 
     OCR = {'mr_1': 'id(?P<country>[a-z]{3})[a-z]{3}[0-9]{7}(?P<dni>[0-9]{8}[a-z])<+',
            'mr_2': '(?P<date_birth>[0-9]{6})[0-9](?P<sex>m|f)(?P<date_expires>[0-9]{6})[0-9](?P<nat>[a-z]{3})<+[0-9]',
@@ -32,7 +32,7 @@ class DNIScumParser(BaseScumDocParser):
         return content
 
     def pre_process_ocr(self, content):
-        return content.replace(' ', '')
+        return content.replace(' ', '').replace('&', '<')
 
     def post_process_ocr(self, content):
         if content:
@@ -89,7 +89,7 @@ class DNIScumParser(BaseScumDocParser):
         Document is considered invalid if no keywords is found
         :return:
         """
-        if not self._parsed:
+        if not self._parsed or 'keywords' not in self._parsed:
             return True
         for key, value in self._parsed['keywords'].items():
             if value:
@@ -107,7 +107,7 @@ class DNIScumParser(BaseScumDocParser):
         if self.expired_date and self.expired_date < reference_date:
             return True
 
-        if len(self._parsed['dates']) == 2:
+        if 'dates' in self._parsed and len(self._parsed['dates']) == 2:
             for date in self._parsed['dates']:
                 if date > reference_date:
                     return False
