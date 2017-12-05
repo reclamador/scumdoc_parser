@@ -32,11 +32,15 @@ DNI_OLD_FIRST_BACK = u'SEOUVEVAUEVASONVAEBECEIPEIVIBABE\nESPANA\nLUGAR DE NACIMI
 
 DNI_NOT_VALID = U'OJETE CALOR'
 
+DNI_NO_DATES = u'LUGAR DE NACIMIENTO\nSANTOÑA\nPROVINCIA/PAIS\nCANTABRIA\nRUOIA DE\nLORENZO / BEGOÑA\nDOMICILIO\nBARO. ORIÑON 65 002 0006\nLUGAR DE DOMICILIO\nORI NON\nCASTRO - URDIALES\nPROVINCIA/PAIS\nCANTABRIANS\nEQUIPO\n39676 A6DV\nIDESPADL1941614 25748789R&&\n6302197F1911105 ESP<<<<<<<\nSANZ <PEREZ<<BEGONA <<'
+
+DNI_NO_KEYWORDS = u'DOMICILIO / DOMICILI\nCRER. SANT ANTONI MARIA CLARET 48 P05 0001\nESPLUGUES DE LLOBREGAT\nBARCELONA\nEQUIPO / EQUIP\n08055D6D1\nLUGAR DE NACIMIENTO / LLOC DE NAIXEMENT//\nBARCELONA\nBARCELONA\nHIJOIA DE / FILLUA DE\nROBERTO I AI\nIDES PBDP14712 0016925657P<<<<<<\n8905086M2204042 ESP<<<<<<<<<<<7\nMARTINEZ<PEREZ<<MANUEL<<<<<<<\n'
+
 class TestDNIScumdocParser(unittest.TestCase):
     """Tests for `scumdoc_parser` package."""
 
-    keywords = {'nombre': True,  'sexo nacionalidad': True, "domicilio": True, "hijo/a de": True,
-                'fecha de nacimiento': True, 'lugar de nacimiento': True,
+    keywords = {'nombre': True,  'sexo nacionalidad': True, "domicilio": True, "domicilio / domicili": True, "hijo/a de": True,
+                'fecha de nacimiento': True, 'lugar de nacimiento': True, "lugar de nacimiento/ lloc de naixement": True,
                 # new keywords
                 "espana o documento nacional de identidad": True,
                 "apellidos": True, "num soport validez": True, 'dni': True,
@@ -44,7 +48,7 @@ class TestDNIScumdocParser(unittest.TestCase):
                 'documento nacional de identidad': True, "idesp": True,
                 "primer apellido": True, "segundo apellido": True, "valido hasta": True, "dni num": True,
                 "provincia/pais":  True,  "lugar de domicilio": True,
-                "equipo": True}
+                "equipo": True, "equipo / equip": True}
 
     def setUp(self):
         """Set up test fixtures, if any."""
@@ -214,6 +218,9 @@ class TestDNIScumdocParser(unittest.TestCase):
         keywords = {key:False for key, value in self.keywords.items()}
         keywords["idesp"] = True
         keywords['dni num'] = True
+        keywords['domicilio / domicili'] = True
+        keywords['lugar de nacimiento/ lloc de naixement'] = True
+        keywords['equipo / equip'] = True
         parser = DNIScumParser(DNI_OLD_FIRST_BACK)
         result = parser.parse()
         ocrs = {'date_expires': u'210610', 'surnames': u'martinez<gag0<', 'date_birth': u'690619',
@@ -299,121 +306,132 @@ class TestDNIScumdocParser(unittest.TestCase):
         self.assertEqual(parser.surnames, None)
 
     def test_not_is_invalid(self):
-        def _test_not_is_invalid(dni_to_test):
-            parser = DNIScumParser(dni_to_test)
-            self.assertFalse(parser.is_invalid())
-        for dni_to_test in [DNI_OLD, DNI_OLD_NO_BACK, DNI_OLD_FIRST_BACK, DNI_NEW_NO_BACK,
-                            DNI_NEW, DNI_OLD_CAT, DNI_OLD_NO_BACK_CAT]:
-            _test_not_is_invalid(dni_to_test)
+         def _test_not_is_invalid(dni_to_test):
+             parser = DNIScumParser(dni_to_test)
+             self.assertFalse(parser.is_invalid())
+         for dni_to_test in [DNI_OLD, DNI_OLD_NO_BACK, DNI_OLD_FIRST_BACK, DNI_NEW_NO_BACK,
+                             DNI_NEW, DNI_OLD_CAT, DNI_OLD_NO_BACK_CAT]:
+             _test_not_is_invalid(dni_to_test)
 
     def test_is_invalid(self):
-        parser = DNIScumParser(DNI_NOT_VALID)
-        self.assertTrue(parser.is_invalid())
+         parser = DNIScumParser(DNI_NOT_VALID)
+         self.assertTrue(parser.is_invalid())
 
     def test_not_is_expired_with_back_mr(self):
-        parser = DNIScumParser(DNI_NEW)
-        reference_date = datetime(year=2017, month=12, day=1).date()
-        self.assertFalse(parser.is_expired(reference_date))
+         parser = DNIScumParser(DNI_NEW)
+         reference_date = datetime(year=2017, month=12, day=1).date()
+         self.assertFalse(parser.is_expired(reference_date))
 
     def test_is_expired_with_back_mr(self):
-        parser = DNIScumParser(DNI_NEW)
-        reference_date = datetime(year=2030, month=12, day=1).date()
-        self.assertTrue(parser.is_expired(reference_date))
+         parser = DNIScumParser(DNI_NEW)
+         reference_date = datetime(year=2030, month=12, day=1).date()
+         self.assertTrue(parser.is_expired(reference_date))
 
     def test_not_is_expired_with_no_back(self):
-        parser = DNIScumParser(DNI_NEW_NO_BACK)
-        reference_date = datetime(year=2017, month=12, day=1).date()
-        self.assertFalse(parser.is_expired(reference_date))
+         parser = DNIScumParser(DNI_NEW_NO_BACK)
+         reference_date = datetime(year=2017, month=12, day=1).date()
+         self.assertFalse(parser.is_expired(reference_date))
 
     def test_is_expired_with_no_back(self):
-        parser = DNIScumParser(DNI_NEW_NO_BACK)
-        reference_date = datetime(year=2030, month=12, day=1).date()
-        self.assertTrue(parser.is_expired(reference_date))
+         parser = DNIScumParser(DNI_NEW_NO_BACK)
+         reference_date = datetime(year=2030, month=12, day=1).date()
+         self.assertTrue(parser.is_expired(reference_date))
 
     def test_is_front(self):
-        parser = DNIScumParser(DNI_NEW_NO_BACK)
-        self.assertTrue(parser.is_front())
+         parser = DNIScumParser(DNI_NEW_NO_BACK)
+         self.assertTrue(parser.is_front())
 
     def test_not_is_front(self):
-        parser = DNIScumParser(DNI_ONLY_BACK)
-        self.assertFalse(parser.is_front())
+         parser = DNIScumParser(DNI_ONLY_BACK)
+         self.assertFalse(parser.is_front())
 
     def test_is_back(self):
-        parser = DNIScumParser(DNI_NEW)
-        self.assertTrue(parser.is_back())
+         parser = DNIScumParser(DNI_NEW)
+         self.assertTrue(parser.is_back())
 
     def test_not_is_back(self):
-        parser = DNIScumParser(DNI_NEW_NO_BACK)
-        self.assertFalse(parser.is_back())
+         parser = DNIScumParser(DNI_NEW_NO_BACK)
+         self.assertFalse(parser.is_back())
 
     def test_check_id_complete_dni(self):
-        parser = DNIScumParser(DNI_OLD)
-        self.assertTrue(parser.check_id('56933095f'))
+         parser = DNIScumParser(DNI_OLD)
+         self.assertTrue(parser.check_id('56933095f'))
 
     def test_check_id_only_front(self):
-        parser = DNIScumParser(DNI_OLD_NO_BACK)
-        self.assertTrue(parser.check_id('56933095f'))
+         parser = DNIScumParser(DNI_OLD_NO_BACK)
+         self.assertTrue(parser.check_id('56933095f'))
 
     def test_check_id_only_back(self):
-        parser = DNIScumParser(DNI_OLD_ONLY_BACK)
-        self.assertTrue(parser.check_id('56933095f'))
+         parser = DNIScumParser(DNI_OLD_ONLY_BACK)
+         self.assertTrue(parser.check_id('56933095f'))
 
     def test_check_id_complete_dni_not_found(self):
-        parser = DNIScumParser(DNI_OLD)
-        self.assertFalse(parser.check_id('77 933095f'))
+         parser = DNIScumParser(DNI_OLD)
+         self.assertFalse(parser.check_id('77 933095f'))
 
     def test_check_id_only_front_not_found(self):
-        parser = DNIScumParser(DNI_OLD_NO_BACK)
-        self.assertFalse(parser.check_id('89933095f'))
+         parser = DNIScumParser(DNI_OLD_NO_BACK)
+         self.assertFalse(parser.check_id('89933095f'))
 
     def test_check_id_only_back_not_found(self):
-        parser = DNIScumParser(DNI_OLD_ONLY_BACK)
-        self.assertFalse(parser.check_id('89933095f'))
+         parser = DNIScumParser(DNI_OLD_ONLY_BACK)
+         self.assertFalse(parser.check_id('89933095f'))
 
     def test_check_person_found(self):
-        parser = DNIScumParser(DNI_NEW)
-        self.assertTrue(parser.check_person({'name': 'ramon', 'surnames': 'alvarez dorado'}))
+         parser = DNIScumParser(DNI_NEW)
+         self.assertTrue(parser.check_person({'name': 'ramon', 'surnames': 'alvarez dorado'}))
 
     def test_check_person_not_found(self):
-        parser = DNIScumParser(DNI_NEW)
-        self.assertFalse(parser.check_person({'name': 'jose', 'surnames': 'martinez dorado'}))
+         parser = DNIScumParser(DNI_NEW)
+         self.assertFalse(parser.check_person({'name': 'jose', 'surnames': 'martinez dorado'}))
 
     def test_analysis_new_dni_valid(self):
-        parser = DNIScumParser(DNI_NEW)
-        reference_date = datetime(year=2017, month=11, day=1).date()
-        self.assertAnalysis([parser.VALID], parser.analysis(person={'name': 'ramon', 'surnames': 'alvarez dorado',
-                                                                    'id':'04900073d'},
-                                                            reference_date=reference_date))
+         parser = DNIScumParser(DNI_NEW)
+         reference_date = datetime(year=2017, month=11, day=1).date()
+         self.assertAnalysis([parser.VALID], parser.analysis(person={'name': 'ramon', 'surnames': 'alvarez dorado',
+                                                                     'id':'04900073d'},
+                                                             reference_date=reference_date))
 
     def test_analysis_new_dni_valid_with_only_number(self):
-        parser = DNIScumParser(DNI_NEW)
-        reference_date = datetime(year=2017, month=11, day=1).date()
-        self.assertAnalysis([parser.VALID], parser.analysis(person={'name': 'ramon', 'surnames': 'alvarez dorado'},
-                                                            reference_date=reference_date))
+         parser = DNIScumParser(DNI_NEW)
+         reference_date = datetime(year=2017, month=11, day=1).date()
+         self.assertAnalysis([parser.VALID], parser.analysis(person={'name': 'ramon', 'surnames': 'alvarez dorado'},
+                                                             reference_date=reference_date))
 
     def test_analysis_new_dni_not_client(self):
-        parser = DNIScumParser(DNI_NEW)
-        reference_date = datetime(year=2017, month=11, day=1).date()
-        self.assertAnalysis([parser.FRONT, parser.BACK, parser.NOT_VALID_PERSON],
-                            parser.analysis(person={'name': 'luis', 'surnames': 'alvarez dorado', 'id': '14900073d'},
-                                            reference_date=reference_date))
+         parser = DNIScumParser(DNI_NEW)
+         reference_date = datetime(year=2017, month=11, day=1).date()
+         self.assertAnalysis([parser.FRONT, parser.BACK, parser.NOT_VALID_PERSON],
+                             parser.analysis(person={'name': 'luis', 'surnames': 'alvarez dorado', 'id': '14900073d'},
+                                             reference_date=reference_date))
 
     def test_analysis_old_dni_valid(self):
-        parser = DNIScumParser(DNI_OLD)
-        reference_date = datetime(year=2017, month=11, day=1).date()
-        self.assertAnalysis([parser.VALID],
-                            parser.analysis(person={'name': 'maria del sagrario',
-                                                    'surnames': 'sanchez de la blanca puente', 'id': '56933095f'},
-                                            reference_date=reference_date))
+         parser = DNIScumParser(DNI_OLD)
+         reference_date = datetime(year=2017, month=11, day=1).date()
+         self.assertAnalysis([parser.VALID],
+                             parser.analysis(person={'name': 'maria del sagrario',
+                                                     'surnames': 'sanchez de la blanca puente', 'id': '56933095f'},
+                                             reference_date=reference_date))
 
     def test_analysis_dni_expired(self):
-        parser = DNIScumParser(DNI_OLD)
-        reference_date = datetime(year=2030, month=11, day=1).date()
-        self.assertAnalysis([parser.EXPIRED, parser.FRONT, parser.BACK],
-                            parser.analysis(person={'name': 'maria del sagrario',
-                                                    'surnames': 'sanchez de la blanca puente', 'id': '56933095f'},
-                                            reference_date=reference_date))
+         parser = DNIScumParser(DNI_OLD)
+         reference_date = datetime(year=2030, month=11, day=1).date()
+         self.assertAnalysis([parser.EXPIRED, parser.FRONT, parser.BACK],
+                             parser.analysis(person={'name': 'maria del sagrario',
+                                                     'surnames': 'sanchez de la blanca puente', 'id': '56933095f'},
+                                             reference_date=reference_date))
 
     def test_analysis_not_valid(self):
-        parser = DNIScumParser(DNI_NOT_VALID)
-        self.assertAnalysis([parser.NOT_VALID], parser.analysis())
+         parser = DNIScumParser(DNI_NOT_VALID)
+         self.assertAnalysis([parser.NOT_VALID], parser.analysis())
+
+    def test_analysis_dates_not_found(self):
+        parser = DNIScumParser(DNI_NO_DATES)
+        self.assertAnalysis([parser.BACK], parser.analysis(person={'name': 'begoña',
+                                                    'surnames': 'sanz perez', 'id': '25748789r'}))
+
+    def test_analysis_keywords_not_found(self):
+        parser = DNIScumParser(DNI_NO_KEYWORDS)
+        print parser._parsed
+        self.assertAnalysis([parser.BACK], parser.analysis(person={'name': 'manuel',
+                                                            'surnames': 'martinez perez', 'id': '16925657p'}))
