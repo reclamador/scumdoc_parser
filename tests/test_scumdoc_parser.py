@@ -405,6 +405,15 @@ class TestDNIScumdocParser(unittest.TestCase):
                              parser.analysis(person={'name': 'luis', 'surnames': 'alvarez dorado', 'id': '14900073d'},
                                              reference_date=reference_date))
 
+    def test_analysis_old_dni_valid_no_id(self):
+         parser = DNIScumParser(DNI_OLD)
+         print parser._parsed
+         reference_date = datetime(year=2017, month=11, day=1).date()
+         self.assertAnalysis([parser.VALID],
+                             parser.analysis(person={'name': 'maria del sagrario',
+                                                     'surnames': 'sanchez de la blanca puente'},
+                                             reference_date=reference_date))
+
     def test_analysis_old_dni_valid(self):
          parser = DNIScumParser(DNI_OLD)
          reference_date = datetime(year=2017, month=11, day=1).date()
@@ -432,6 +441,5 @@ class TestDNIScumdocParser(unittest.TestCase):
 
     def test_analysis_keywords_not_found(self):
         parser = DNIScumParser(DNI_NO_KEYWORDS)
-        print parser._parsed
         self.assertAnalysis([parser.BACK], parser.analysis(person={'name': 'manuel',
                                                             'surnames': 'martinez perez', 'id': '16925657p'}))
