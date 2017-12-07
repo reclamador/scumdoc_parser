@@ -36,6 +36,8 @@ DNI_NO_DATES = u'LUGAR DE NACIMIENTO\nSANTOÑA\nPROVINCIA/PAIS\nCANTABRIA\nRUOIA
 
 DNI_NO_KEYWORDS = u'DOMICILIO / DOMICILI\nCRER. SANT ANTONI MARIA CLARET 48 P05 0001\nESPLUGUES DE LLOBREGAT\nBARCELONA\nEQUIPO / EQUIP\n08055D6D1\nLUGAR DE NACIMIENTO / LLOC DE NAIXEMENT//\nBARCELONA\nBARCELONA\nHIJOIA DE / FILLUA DE\nROBERTO I AI\nIDES PBDP14712 0016925657P<<<<<<\n8905086M2204042 ESP<<<<<<<<<<<7\nMARTINEZ<PEREZ<<MANUEL<<<<<<<\n'
 
+DNI_OLD_ALL = u'\x0cDOCUMENTO NACIONAL DE IDENTIDAD\nNAMNEMOTOMODELACROMIOON OTOMOTION\nESPA\xd1A\nPRIMER APELLIDO I PRIMER COGNOM\nABAD\nSEGUNDO APELLIDO / SEGON COGNOM\nSANCHEZ\nNOMBRE I NOM\nCLARA\nSEXO / SEXE NACIONALIDAD / NACIONALITAT\nF ESP\nFECHA DE NACIMIENTO / DATA DE NAIXEMENT\n12 10 1980\nIDESP\nAJL180334\nV\xc1LIDO HASTA / VALID FINS\n17 06 2021\n! :: Rii::\nBia\n170611\nAaro\nDNI N\xdaM.\n52423963V\n\x0ci\nPasies LUGAR DE NACIMIENTO / LLOC DE NAIXEMENT\nVILANOVA I LA GELTR\xda\n| PROVINCIA/PAIS / PROVINCIA -PAIS\nBARCELONA\nHIJOJA DE FILLIA DE\nJESUS / MARIA JOSE\nDOMICILIO / DOMICILI\nCRER. SOGUES 9 002 0001\nLUGAR DE DOMICILIO / LLOC DE DOMICILI\nVILANOVA I LA GELTR\xda\nPROVINCIA/PAIS (PROVINCIA PARANN\nBARCELONA\nEquipo / EQUIP\n08901L6D1\nIDES PAJL180334352423963V<<<<<<\n8010122F2106179 ESP<<<<<<<<<<<3\nABAD<SANCHEZ<<CLARA<<<<<<<<<<<\n'
+
 class TestDNIScumdocParser(unittest.TestCase):
     """Tests for `scumdoc_parser` package."""
 
@@ -407,12 +409,21 @@ class TestDNIScumdocParser(unittest.TestCase):
 
     def test_analysis_old_dni_valid_no_id(self):
          parser = DNIScumParser(DNI_OLD)
-         print parser._parsed
          reference_date = datetime(year=2017, month=11, day=1).date()
          self.assertAnalysis([parser.VALID],
                              parser.analysis(person={'name': 'maria del sagrario',
                                                      'surnames': 'sanchez de la blanca puente'},
                                              reference_date=reference_date))
+
+    def test_analysis_old_dni_valid_id_none(self):
+        parser = DNIScumParser(DNI_OLD_ALL)
+        print parser._parsed
+        reference_date = datetime(year=2017, month=11, day=1).date()
+        self.assertAnalysis([parser.VALID],
+                            parser.analysis(person={'name': 'Clara',
+                                                    'surnames': 'Abad', 'id': None},
+                                            reference_date=reference_date))
+
 
     def test_analysis_old_dni_valid(self):
          parser = DNIScumParser(DNI_OLD)
@@ -443,3 +454,4 @@ class TestDNIScumdocParser(unittest.TestCase):
         parser = DNIScumParser(DNI_NO_KEYWORDS)
         self.assertAnalysis([parser.BACK], parser.analysis(person={'name': 'manuel',
                                                             'surnames': 'martinez perez', 'id': '16925657p'}))
+

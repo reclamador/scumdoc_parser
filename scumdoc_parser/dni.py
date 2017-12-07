@@ -145,9 +145,9 @@ class DNIScumParser(BaseScumDocParser):
         :param id:
         :return:
         """
-        if self.number == id:
+        if self.number == id.lower():
             return True
-        for key, value in self.search([id], self.id_ratio)['keywords'].items():
+        for key, value in self.search([id.lower()], self.id_ratio)['keywords'].items():
             if value:
                 return True
         return False
@@ -159,18 +159,19 @@ class DNIScumParser(BaseScumDocParser):
         :return:
         """
         found = True
-        if 'id' in person:
+        if 'id' in person and person['id']:
             return self.check_id(person['id'])
         if self.name == person['name'] and self.surnames == person['surnames']:
-            return True if 'id' not in person else self.check_id(person['id'])
-        for key, value in self.search([person['name'], person['surnames']], self.client_ratio)['keywords'].items():
+            return True if 'id' not in person or not person['id'] else self.check_id(person['id'])
+        for key, value in self.search([person['name'].lower(),
+                                       person['surnames'].lower()], self.client_ratio)['keywords'].items():
             if not value:
                 found = False
                 break
             print key, value
         if not found:
             return False
-        return True if 'id' not in person else self.check_id(person['id'])
+        return True if 'id' not in person or not person['id'] else self.check_id(person['id'])
 
     def analysis(self, person=None, reference_date=None):
         """
