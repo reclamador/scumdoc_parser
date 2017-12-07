@@ -1,4 +1,5 @@
 from datetime import datetime
+import unicodedata
 from scumdoc_parser import BaseScumDocParser, FuzzySearch, RegexSearch
 
 
@@ -24,7 +25,7 @@ class DNIScumParser(BaseScumDocParser):
 
     OCR = {'mr_1': 'id(?P<country>[a-z]{3})[a-z]{3}[0-9]{7}(?P<dni>[0-9]{8}[a-z])<+',
            'mr_2': '(?P<date_birth>[0-9]{6})[0-9](?P<sex>m|f)(?P<date_expires>[0-9]{6})[0-9](?P<nat>[a-z]{3})<+[0-9]',
-           'mr_3': '(?P<surnames>([a-z0]+<)+)<(?P<names>[a-z0]+)<*'}
+           'mr_3': '(?P<surnames>([a-z0]+<)+)<(?P<names>([a-z0]+<*)+)'}
 
     def post_process_date(self, content):
         if content:
@@ -36,7 +37,13 @@ class DNIScumParser(BaseScumDocParser):
 
     def post_process_ocr(self, content):
         if content:
-            return content.groupdict()
+            content_dict = {}
+            for key, value in content.groupdict().items():
+                if key in ['name', 'surnames']:
+                    content_dict[key] = value.replace('<', ' ').replace('0', 'o').strip()
+                else:
+                    content_dict[key] = value.replace('<', ' ').strip()
+            return content_dict
         return content
 
     def __init__(self, text, keywords_ratio=0.7, client_ratio=0.7, id_ratio=0.8):
@@ -83,7 +90,7 @@ class DNIScumParser(BaseScumDocParser):
     @property
     def surnames(self):
         try:
-            return self._attribute((['ocr', 'mr_3', 'surnames'])).replace('<', ' ').replace('0', 'o').strip()
+            return self._attribute((['ocr', 'mr_3', 'surnames']))
         except AttributeError:
             return None
 
@@ -163,12 +170,11 @@ class DNIScumParser(BaseScumDocParser):
             return self.check_id(person['id'])
         if self.name == person['name'] and self.surnames == person['surnames']:
             return True if 'id' not in person or not person['id'] else self.check_id(person['id'])
-        for key, value in self.search([person['name'].lower(),
-                                       person['surnames'].lower()], self.client_ratio)['keywords'].items():
+        for key, value in self.search([person['name'],
+                                       person['surnames']], self.client_ratio)['keywords'].items():
             if not value:
                 found = False
                 break
-            print key, value
         if not found:
             return False
         return True if 'id' not in person or not person['id'] else self.check_id(person['id'])
@@ -180,6 +186,9 @@ class DNIScumParser(BaseScumDocParser):
         :param reference_date:
         :return:
         """
+        if person:
+            for key, value in person.items():
+                person[key] = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').lower() if value else value
         results = []
         if self.is_invalid():
             return [self.NOT_VALID]
