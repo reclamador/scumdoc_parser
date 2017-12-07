@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """Tests for `scumdoc_parser` package."""
-
+from __future__ import unicode_literals
 import mock
 from datetime import datetime, date
 import unittest
@@ -36,7 +36,10 @@ DNI_NO_DATES = u'LUGAR DE NACIMIENTO\nSANTOÑA\nPROVINCIA/PAIS\nCANTABRIA\nRUOIA
 
 DNI_NO_KEYWORDS = u'DOMICILIO / DOMICILI\nCRER. SANT ANTONI MARIA CLARET 48 P05 0001\nESPLUGUES DE LLOBREGAT\nBARCELONA\nEQUIPO / EQUIP\n08055D6D1\nLUGAR DE NACIMIENTO / LLOC DE NAIXEMENT//\nBARCELONA\nBARCELONA\nHIJOIA DE / FILLUA DE\nROBERTO I AI\nIDES PBDP14712 0016925657P<<<<<<\n8905086M2204042 ESP<<<<<<<<<<<7\nMARTINEZ<PEREZ<<MANUEL<<<<<<<\n'
 
-DNI_OLD_ALL = u'\x0cDOCUMENTO NACIONAL DE IDENTIDAD\nNAMNEMOTOMODELACROMIOON OTOMOTION\nESPA\xd1A\nPRIMER APELLIDO I PRIMER COGNOM\nABAD\nSEGUNDO APELLIDO / SEGON COGNOM\nSANCHEZ\nNOMBRE I NOM\nCLARA\nSEXO / SEXE NACIONALIDAD / NACIONALITAT\nF ESP\nFECHA DE NACIMIENTO / DATA DE NAIXEMENT\n12 10 1980\nIDESP\nAJL180334\nV\xc1LIDO HASTA / VALID FINS\n17 06 2021\n! :: Rii::\nBia\n170611\nAaro\nDNI N\xdaM.\n52423963V\n\x0ci\nPasies LUGAR DE NACIMIENTO / LLOC DE NAIXEMENT\nVILANOVA I LA GELTR\xda\n| PROVINCIA/PAIS / PROVINCIA -PAIS\nBARCELONA\nHIJOJA DE FILLIA DE\nJESUS / MARIA JOSE\nDOMICILIO / DOMICILI\nCRER. SOGUES 9 002 0001\nLUGAR DE DOMICILIO / LLOC DE DOMICILI\nVILANOVA I LA GELTR\xda\nPROVINCIA/PAIS (PROVINCIA PARANN\nBARCELONA\nEquipo / EQUIP\n08901L6D1\nIDES PAJL180334352423963V<<<<<<\n8010122F2106179 ESP<<<<<<<<<<<3\nABAD<SANCHEZ<<CLARA<<<<<<<<<<<\n'
+DNI_OLD_ALL = u'\x0cDOCUMENTO NACIONAL DE IDENTIDAD\nNAMNEMOTOMODELACROMIOON OTOMOTION\nESPA\xd1A\nPRIMER APELLIDO I PRIMER COGNOM\nABAD\nSEGUNDO APELLIDO / SEGON COGNOM\nSANZ\nNOMBRE I NOM\nCLARA\nSEXO / SEXE NACIONALIDAD / NACIONALITAT\nF ESP\nFECHA DE NACIMIENTO / DATA DE NAIXEMENT\n12 10 1980\nIDESP\nAJL180334\nV\xc1LIDO HASTA / VALID FINS\n17 06 2021\n! :: Rii::\nBia\n170611\nAaro\nDNI N\xdaM.\n63423963V\n\x0ci\nPasies LUGAR DE NACIMIENTO / LLOC DE NAIXEMENT\nVILANOVA I LA GELTR\xda\n| PROVINCIA/PAIS / PROVINCIA -PAIS\nBARCELONA\nHIJOJA DE FILLIA DE\nJOSE / ANA JOSE\nDOMICILIO / DOMICILI\nCRER. SOGUES 8 002 0001\nLUGAR DE DOMICILIO / LLOC DE DOMICILI\nVILANOVA I LA GELTR\xda\nPROVINCIA/PAIS (PROVINCIA PARANN\nBARCELONA\nEquipo / EQUIP\n08901L6D1\nIDES PAJL180334363423963V<<<<<<\n8010122F2106179 ESP<<<<<<<<<<<3\nABAD<SANZ<<CLARA<<<<<<<<<<<\n'
+
+DNI_OLD_COMPLETE_SURNAMES = u'\x0cthe onweersingkirkeolvier\nentstarctium III II TIITLIT T\xedTILDTUIC TITICE DIN\nHIGHER EVERHAVERBER\nJ = DOCUMENTO NACIONAL DE IDENTIDAD\nPRIMER APELLIDO\nCORTES\nSEGUNDO APELIDO\nSANZ\nNOMBRE\nJOSE CARLOS\nSEXO NACIONALIDAD\nESP\nFECHA DE NACIMIENTO\n29 03 1984\nIDESP\nAPP147129.\nV\xc1LIDO HASTA\n11 02 2019\nMINISTRO\nownini DNI N\xdaM.\n59969177S\n\x0cLUGAR DE NACIMIENTO\nC\xc1DIZ\nPROVINCIA/PAIS\nC\xc1DIZ\nHJOIA DE\nPEPE / SAGRARIO\nDOMICILIO\nCMNO. CAMINO DEL\nLLOBREGAT ( 15 B\nLUGAR DE DOMICILIO\nCHICLANA DE LA FRONTERA\nPROVINCIA/PAIS\nEQUIPO\n11691L6D1\nsett er en private\nme\nviewizerritoris\nIDES PAPP147129859969177s<<<<<<\n8403294M1902112 ESP<<<<<<<<<<<7\nCORTES<SAN Z<<JOSE<ALBERTO<<<<\n'
+
 
 class TestDNIScumdocParser(unittest.TestCase):
     """Tests for `scumdoc_parser` package."""
@@ -86,7 +89,7 @@ class TestDNIScumdocParser(unittest.TestCase):
                 'country': 'esp',
                 'dni': '56933095f',
                 'sex': 'f',
-                'surnames': 'sanchoz<de<la<blancakpuente<', 'names': 'm'}
+                'surnames': 'sanchoz de la blancakpuente', 'names': 'm'}
         parser = DNIScumParser(DNI_OLD)
         result = parser.parse()
         self.assertResult(result, [date(year=2021, month=9, day=19)], keywords, ocrs)
@@ -169,7 +172,7 @@ class TestDNIScumdocParser(unittest.TestCase):
         keywords['lugar de domicilio'] = False
         keywords['dni'] = False
         keywords['provincia/pais'] = False
-        ocrs = {'date_expires': u'260412', 'surnames': u'alvarez<dorad0<', 'date_birth': u'831117',
+        ocrs = {'date_expires': u'260412', 'surnames': u'alvarez dorado', 'date_birth': u'831117',
                      'names': u'ramon', 'nat': u'esp', 'country': u'esp', 'dni': u'04900073d', 'sex': u'm'}
         parser = DNIScumParser(DNI_NEW)
         result = parser.parse()
@@ -225,8 +228,8 @@ class TestDNIScumdocParser(unittest.TestCase):
         keywords['equipo / equip'] = True
         parser = DNIScumParser(DNI_OLD_FIRST_BACK)
         result = parser.parse()
-        ocrs = {'date_expires': u'210610', 'surnames': u'martinez<gag0<', 'date_birth': u'690619',
-                'names': u'pepa', 'nat': u'esp', 'country': u'esp', 'dni': u'53686041w', 'sex': u'f'}
+        ocrs = {'date_expires': u'210610', 'surnames': u'martinez gago', 'date_birth': u'690619',
+                'names': u'pepa esther', 'nat': u'esp', 'country': u'esp', 'dni': u'53686041w', 'sex': u'f'}
         self.assertResult(result, [date(year=1969, month=6, day=19),
                                    date(year=2021, month=6, day=10)], keywords, ocrs)
 
@@ -417,11 +420,18 @@ class TestDNIScumdocParser(unittest.TestCase):
 
     def test_analysis_old_dni_valid_id_none(self):
         parser = DNIScumParser(DNI_OLD_ALL)
-        print parser._parsed
         reference_date = datetime(year=2017, month=11, day=1).date()
         self.assertAnalysis([parser.VALID],
                             parser.analysis(person={'name': 'Clara',
                                                     'surnames': 'Abad', 'id': None},
+                                            reference_date=reference_date))
+
+    def test_analysis_old_dni_valid_id_surnames(self):
+        parser = DNIScumParser(DNI_OLD_COMPLETE_SURNAMES)
+        reference_date = datetime(year=2017, month=11, day=1).date()
+        self.assertAnalysis([parser.VALID],
+                            parser.analysis(person={'name': 'Jose alberto',
+                                                    'surnames': 'Cort\xe9s sanz', 'id': None},
                                             reference_date=reference_date))
 
 
