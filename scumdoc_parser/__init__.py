@@ -31,6 +31,12 @@ class BaseSearch(object):
             return content
         return None
 
+    @classmethod
+    def process_regex_only_true(cls, content):
+        if content:
+            return True
+        return None
+
     def _search(self, line):
         """
         Implement this method for performing the real search
@@ -130,18 +136,23 @@ class BaseScumDocParser(object):
                 search.search(line, result)
         return result
 
-    def search(self, keywords, ratio=0.7):
+    def search(self, keywords, ratio=0.7, regex=False):
         """
         Search some keywords
         :param keywords:
         :param ratio:
+        :param regex:
         :return:
         """
         result = {'keywords': {keyword: False for keyword in keywords}}
         searches = []
         for keyword in keywords:
-            searches.append(FuzzySearch(keyword, keyword, ratio, group='keywords',
-                                        post_process=FuzzySearch.process_only_true))
+            if regex:
+                searches.append(RegexSearch(keyword, regex=keyword, group="keywords",
+                                            post_process=RegexSearch.process_regex_only_true))
+            else:
+                searches.append(FuzzySearch(keyword, keyword, ratio, group='keywords',
+                                            post_process=FuzzySearch.process_only_true))
         for line in self.text:
             for search in searches:
                 search.search(line, result)
