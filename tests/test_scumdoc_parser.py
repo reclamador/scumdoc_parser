@@ -8,7 +8,7 @@ from datetime import datetime, date
 import unittest
 from datetime import date
 
-from scumdoc_parser.dni import DNIScumParser
+from scumdoc_parser.dni import DNIScumParser, BaseScumDocParser
 from scumdoc_parser import FuzzySearch, RegexSearch, BaseScumDocParser
 
 DNI_OLD = u'DOCUMENTO NACIONALDE IDENTIDAD.\nESPANA\nPARIER APELD0\nSANCHOZ DE LA BL ANC A\nSEGUNDO APELD\nA PUENT ES\nTo NOORE\nMARIA DEL Sagrario\nSaxo NACIONALIDAD\nFESP\nFECHA DE NAMENTO\nO910 1978\nDESP\nA JX199161\nVADO HASTA\non the\n19 09 2021\nSPM\nDNI NUM .\n56933095F\nLEID\nLUGAR DE NACMIENTO\nMAD RI D\nPROVINCIA/PAIS\nMADRID\nHJOIA DE\nJUAN 1 ANTONIA\nDOMICILIO\nC. R10 T A J 0 1 0 P01 B\nLUGAR DE DOMICILIO\nAL COR CON\nSELLER\nPROVINCIAIPAIS\nEQUIPO\nMADRID , SONNNNNNSSSSSSSS 28031L6D 1\nIDES PA JX1991 61956933095 F<<<<<<\n7810098F2109195ESP<<<<<<<<<<<5\nSANCHOZ<DE<LA<BLANCAKPUENTE<<M\n'
@@ -242,6 +242,16 @@ class TestDNIScumdocParser(unittest.TestCase):
         parser = DNIScumParser(DNI_OLD)
         result = parser.search(['ojete'])
         self.assertResult(result, [], {'ojete': False}, {})
+
+    def test_dni_search_not_found_regex(self):
+        parser = DNIScumParser(DNI_OLD)
+        result = parser.search(['ojete'], regex=True)
+        self.assertResult(result, [], {'ojete': False}, {})
+
+    def test_dni_search_found_regex(self):
+        parser = BaseScumDocParser(DNI_OLD, [])
+        result = parser.search(['maria'], regex=True)
+        self.assertResult(result, [], {'maria': True}, {})
 
     def test_fuzzy_search(self):
         result = {}
