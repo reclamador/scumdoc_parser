@@ -188,7 +188,8 @@ class DNIScumParser(BaseScumDocParser):
         """
         if person:
             for key, value in person.items():
-                person[key] = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').lower() if value else value
+                person[key] = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').lower().decode('utf-8') \
+                    if value else value
         results = []
         if self.is_invalid():
             return [self.NOT_VALID]
