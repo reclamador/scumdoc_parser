@@ -25,7 +25,7 @@ test_requirements = [
 
 setup(
     name='scumdoc_parser',
-    version='0.3.0',
+    version='0.4.0',
     description="Parser for docs previously text extracted by an OCR. Just for (legal) documents no NLP is required",
     long_description=readme + '\n\n' + history,
     author="Juan Madurga",
